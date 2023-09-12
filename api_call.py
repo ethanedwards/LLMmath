@@ -1,11 +1,17 @@
 import asyncio
+from aiohttp import ClientSession
 import openai
+import config
 
 
 # The rate limit for OpenAI API
-RATE_LIMIT = 60
+RATE_LIMIT = 300
 # Create a semaphore to avoid rate limits
 semaphore = asyncio.Semaphore(RATE_LIMIT)
+
+#set up openai api key
+openai.api_key = config.openai_api_key
+openai.organization = config.openai_org_key
 
 # Create a session to be used by aiohttp for greatest efficiency
 def begin_async():
