@@ -41,7 +41,12 @@ def test_sync():
     end = time.time()
     print(f'Completion time is {end - start}')
 
+
+def test_async_vs_sync():
+    test_sync()
+    asyncio.run(test_async())
+
 #main function
 if __name__ == '__main__':
-    asyncio.run(test_async2())
+    asyncio.run(test_async())
     #test_sync()
