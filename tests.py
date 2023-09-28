@@ -3,6 +3,58 @@ import asyncio
 import random
 import time
 
+import unittest
+from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, ThaiConverter, BengaliConverter
+
+class TestConverters(unittest.TestCase):
+    def test_persian_converter(self):
+        converter = PersianConverter()
+        self.assertEqual(converter.to_alt(123), '۱۲۳')
+        self.assertEqual(converter.to_arabic('۱۲۳'), 123)
+        self.assertTrue(converter.is_alt('۱2۳'))
+        self.assertTrue(converter.is_arabic('12۳'))
+        self.assertFalse(converter.is_alt('123'))
+        self.assertFalse(converter.is_arabic('۱۲۳'))
+
+    def test_devanagari_converter(self):
+        converter = DevanagariConverter()
+        self.assertEqual(converter.to_alt(123), '१२३')
+        self.assertEqual(converter.to_arabic('१२३'), 123)
+        self.assertTrue(converter.is_alt('१2३'))
+        self.assertTrue(converter.is_arabic('12३'))
+        self.assertFalse(converter.is_alt('123'))
+        self.assertFalse(converter.is_arabic('१२३'))
+
+    def test_burmese_converter(self):
+        converter = BurmeseConverter()
+        self.assertEqual(converter.to_alt(123), '၁၂၃')
+        self.assertEqual(converter.to_arabic('၁၂၃'), 123)
+        self.assertTrue(converter.is_alt('၁2၃'))
+        self.assertTrue(converter.is_arabic('12၃'))
+        self.assertFalse(converter.is_alt('123'))
+        self.assertFalse(converter.is_arabic('၁၂၃'))
+
+    def test_thai_converter(self):
+        converter = ThaiConverter()
+        self.assertEqual(converter.to_alt(123), '๑๒๓')
+        self.assertEqual(converter.to_arabic('๑๒๓'), 123)
+        self.assertTrue(converter.is_alt('๑2๓'))
+        self.assertTrue(converter.is_arabic('12๓'))
+        self.assertFalse(converter.is_alt('123'))
+        self.assertFalse(converter.is_arabic('๑๒๓'))
+
+    def test_bengali_converter(self):
+        converter = BengaliConverter()
+        self.assertEqual(converter.to_alt(123), '১২৩')
+        self.assertEqual(converter.to_arabic('১২৩'), 123)
+        self.assertTrue(converter.is_alt('১2৩'))
+        self.assertTrue(converter.is_arabic('12৩'))
+        self.assertFalse(converter.is_alt('123'))
+        self.assertFalse(converter.is_arabic('১২৩'))
+
+
+##Async tests
+
 async def test_async():
     begin_async()
     start = time.time()
@@ -45,6 +97,9 @@ def test_async_vs_sync():
     test_sync()
     asyncio.run(test_async())
 
+
+###Numeral tests
+
 #main function
 if __name__ == '__main__':
-    test_async_vs_sync()
+    unittest.main()
