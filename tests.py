@@ -35,7 +35,6 @@ def test_sync():
             #call api
             #use turbo to save on credits
             result = create_chat_completion_sync(prompt, model='gpt-3.5-turbo')
-            print(result)
 
     #end timer
     end = time.time()
@@ -48,5 +47,4 @@ def test_async_vs_sync():
 
 #main function
 if __name__ == '__main__':
-    asyncio.run(test_async())
-    #test_sync()
+    test_async_vs_sync()
