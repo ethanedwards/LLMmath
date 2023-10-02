@@ -1,0 +1,70 @@
+from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter
+import re
+
+converters = {
+    'Persian': PersianConverter(),
+    'Devanagari': DevanagariConverter(),
+    'Burmese': BurmeseConverter(),
+    'Bengali': BengaliConverter(),
+    'Thai': ThaiConverter()
+}
+
+class Record:
+    def __init__(self, first: int, second: int, sign: str, numeral_system: str, promptname: str, promptformat: str, promptdescriptors: list):
+        self.first = first
+        self.second = second
+        self.sign = sign
+        self.numeral_system = numeral_system
+        self.promptname = promptname
+        self.promptdescriptors = promptdescriptors
+        self.completion = None
+        self.completionLanguages = None
+        self.completionNumeralSystems = None
+        self.completionOperands = None
+        self.completionAnswer = None
+        self.completionAnswerArabic = None
+        self.completionCorrect = None
+        self.completionDescriptors = None
+
+        # Convert first and second to the given numeral system.
+        converter = converters.get(numeral_system.to_alt(), lambda x: str(x))  # Default to identity function for Arabic numeral system
+        self.numfirst = converter(first)
+        self.numsecond = converter(second)
+        #Replace prompt with formatted strings
+        #This assumes that prompt format will be of the following format
+        #"Odgovorite u sljedećem formatu 'Wynik mnożenia {num2}{sign}{num3} wynosi {num6}'. Podaj wynik mnożenia {numfirst}{sign}{numsecond}"
+        new_promptformat = promptformat
+        for match in re.findall(r'\{num(\d+)\}', promptformat):
+            number = int(match)
+            new_promptformat = new_promptformat.replace('{num' + match + '}', converter(number))
+
+        # Replace prompt with formatted strings
+        self.prompt = new_promptformat.format(first=self.first, second=self.second, numfirst=self.numfirst, numsecond=self.numsecond, sign=sign)
+
+    def update_results(self, completion: str, completionLanguages: list, completionNumeralSystems: list, completionOperands: str, completionAnswer: str, completionDescriptors: list):
+        self.completion = completion
+        self.completionLanguages = completionLanguages
+        self.completionNumeralSystems = completionNumeralSystems
+        self.completionOperands = completionOperands
+        self.completionAnswer = completionAnswer
+        self.completionDescriptors = completionDescriptors
+
+    def to_dict(self):
+        return {
+            'first': self.first,
+            'second': self.second,
+            'sign': self.sign,
+            'numeral_system': self.numeral_system,
+            'promptname': self.promptname,
+            'promptdescriptors': self.promptdescriptors,
+            'prompt': self.prompt,
+            'completion': self.completion,
+            'completionLanguages': self.completionLanguages,
+            'completionNumeralSystems': self.completionNumeralSystems,
+            'completionOperands': self.completionOperands,
+            'completionAnswer': self.completionAnswer,
+            'completionDescriptors': self.completionDescriptors
+        }
+    
+    def to_csv(self, divider: str = '|'):
+        return divider.join([str(self.first), str(self.second), str(self.sign), str(self.numeral_system), str(self.promptname), str(self.promptdescriptors), str(self.prompt), str(self.completion), str(self.completionLanguages), str(self.completionNumeralSystems), str(self.completionOperands), str(self.completionAnswer), str(self.completionDescriptors)])

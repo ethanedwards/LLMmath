@@ -1,25 +1,25 @@
 class Converter:
-    def __init__(self, numerals_map):
+    def __init__(self, numerals_map: dict):
         self.numerals_map = numerals_map
         self.reverse_numerals_map = {v: k for k, v in numerals_map.items()}
 
-    def to_arabic(self, num):
+    def to_arabic(self, num: int):
         arabic = ''
         for digit in str(num):
             arabic += self.reverse_numerals_map.get(digit, '')
         return int(arabic)
 
-    def to_alt(self, num):
+    def to_alt(self, num: int):
         alt = ''
         for digit in str(num):
             alt += self.numerals_map.get(digit, '')
         return alt
 
-    def is_alt(self, str_num):
+    def is_alt(self, str_num: str):
         return any(c in self.numerals_map.values() for c in str_num)
 
     @staticmethod
-    def is_arabic(str_num):
+    def is_arabic(str_num: str):
         return any('0' <= c <= '9' for c in str_num)
     
 
