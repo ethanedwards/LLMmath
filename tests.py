@@ -6,6 +6,25 @@ import time
 import unittest
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, ThaiConverter, BengaliConverter
 from data_record import Record, converters
+from completion_analysis import find_all_numbers, get_numsystems, find_answer_candidates, get_languages, get_completion_pattern, analyze_completion
+
+class TestNumeralSystems(unittest.TestCase):
+    
+
+    def test_find_all_numbers(self):
+        self.assertEqual(find_all_numbers('124 multipled by 631 is ۱۲۳,۸۶۵'), {'Persian': ['۱۲۳,۸۶۵'], 'Devanagari': [], 'Burmese': [], 'Bengali': [], 'Thai': [], 'Arabic': ['124', '631']})
+
+    def test_get_numsystems(self):
+        self.assertEqual(get_numsystems('124 multipled by 631 is ۱۲۳,۸۶۵'), ['Persian', 'Arabic'])
+
+    def test_find_answer_candidates(self):
+        self.assertEqual(find_answer_candidates('124 multipled by 631 is ۱۲۳,۸۶۵'), [('۱۲۳,۸۶۵', 123865, 'Persian', True)])
+
+    #def test_get_languages(self):
+    #    self.assertEqual(get_languages('test_string'), Expected_Output)
+
+    #def test_get_completion_pattern(self):
+    #    self.assertEqual(get_completion_pattern('test_string'), Expected_Output)
 
 class TestRecord(unittest.TestCase):
 
@@ -141,3 +160,4 @@ def test_async_vs_sync():
 #main function
 if __name__ == '__main__':
     unittest.main()
+    #print(asyncio.run(analyze_completion('124 multipled by 631 is ۱۲۳,۸۶۵', 125565, 124, 631)))
