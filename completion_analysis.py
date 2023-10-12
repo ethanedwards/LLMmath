@@ -111,37 +111,53 @@ def find_answer_candidates(completion: str):
 
 #Extract all the information for the completion and return it to fill out the datarecord
 def analyze_completion(completion: str, answer: int, operandA: int, operandB: int):
-    #Get languages in the completion
-    languages = get_languages(completion)
-    #Get all numeral systems in the completion
-    numsystems = get_numsystems(completion)
-    #Get any and all operands in the text of the completion
-    operands = find_number(completion, operandA) + find_number(completion, operandB)
-    #Check if the answer is in the completion
-    check_answer = (find_number(completion, answer) is not [])
-    #Get answer candidates
-    answer_candidates = find_answer_candidates(completion)
-    #Get the first one
-    answer_string = answer_candidates[0][0]
-    answer_number = answer_candidates[0][1]
+    # Initialize variables with default values to avoid errors in case of empty input
+    languages = []
+    numsystems = []
+    operands = []
+    check_answer = False
+    answer_candidates = []
+    answer_string = ''
+    answer_number = 0
+    answer_comma = False
+    answer_numeral_system = ''
+    answer_cot = ''
+    multiple_answers = False
+    other_answers = []
+    operand_numsystems = []
+    operand_answer_same_numsystem = False
+    completion_pattern = ''
+    
+    # Get values from helper functions only if there is any completion
+    if completion:
+        languages = get_languages(completion)
+        numsystems = get_numsystems(completion)
+        operands = [find_number(completion, operandA)[0][1] if find_number(completion, operandA) else '',
+                    find_number(completion, operandB)[0][1] if find_number(completion, operandB) else '']
+        if find_number(completion, answer):
+            check_answer = True
+        answer_candidates = find_answer_candidates(completion)
+        if answer_candidates:
+            answer_string = answer_candidates[0][0]
+            answer_number = answer_candidates[0][1]
+            answer_comma = answer_candidates[0][3]
+            answer_numeral_system = answer_candidates[0][2]
+            answer_cot = get_completion_pattern(completion)
+            multiple_answers = len(answer_candidates) > 1
+            other_answers = answer_candidates[1:]
+        operand_numsystems = [operand[2] for operand in operands if operand]
+        operand_answer_same_numsystem = answer_numeral_system in operand_numsystems
+        completion_pattern = get_completion_pattern(completion)
 
-    #Get all misc qualities and include them in a dictionary to make up the rest of the completion
-    answer_comma = answer_candidates[0][3]
-    answer_numeral_system = answer_candidates[0][2]
-    answer_cot = get_completion_pattern(completion)
-    multiple_answers = len(answer_candidates) > 1
-    other_answers = answer_candidates[1:]
-    operand_numsystems = [operand[2] for operand in operands]
-    operand_answer_same_numsystem = answer_numeral_system in operand_numsystems
-    completion_pattern = get_completion_pattern(completion)
-    #Make all misc qualities into a dictionary
     misc_qualities = {
         'answer_comma': answer_comma,
         'answer_numeral_system': answer_numeral_system,
         'answer_cot': answer_cot,
         'multiple_answers': multiple_answers,
         'other_answers': other_answers,
-        operand_numsystems: operand_numsystems,
+        'operands_full': [find_number(completion, operandA) if find_number(completion, operandA) else [],
+                          find_number(completion, operandB) if find_number(completion, operandB) else []],
+        'operand_numsystems': operand_numsystems,
         'operand_answer_same_numsystem': operand_answer_same_numsystem,
         'completion_pattern': completion_pattern
     }
