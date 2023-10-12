@@ -1,4 +1,4 @@
-from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter
+from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter, ArabicConverter
 import re
 
 converters = {
@@ -6,7 +6,8 @@ converters = {
     'Devanagari': DevanagariConverter(),
     'Burmese': BurmeseConverter(),
     'Bengali': BengaliConverter(),
-    'Thai': ThaiConverter()
+    'Thai': ThaiConverter(),
+    'Arabic': ArabicConverter()
 }
 
 class Record:
@@ -27,9 +28,9 @@ class Record:
         self.completionDescriptors = None
 
         # Convert first and second to the given numeral system.
-        converter = converters.get(numeral_system.to_alt(), lambda x: str(x))  # Default to identity function for Arabic numeral system
-        self.numfirst = converter(first)
-        self.numsecond = converter(second)
+        self.converter = converters.get(numeral_system, lambda x: str(x))  # Default to identity function for Arabic numeral system
+        self.numfirst = self.converter.to_alt(first)
+        self.numsecond = self.converter.to_alt(second)
         #Replace prompt with formatted strings
         #This assumes that prompt format will be of the following format
         #"Odgovorite u sljedećem formatu 'Wynik mnożenia {num2}{sign}{num3} wynosi {num6}'. Podaj wynik mnożenia {numfirst}{sign}{numsecond}"

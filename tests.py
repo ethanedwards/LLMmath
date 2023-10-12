@@ -5,6 +5,44 @@ import time
 
 import unittest
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, ThaiConverter, BengaliConverter
+from data_record import Record, converters
+
+class TestRecord(unittest.TestCase):
+
+    def test_constructor(self):
+        # Test initialization of Record object
+        record = Record(2, 3, '+', 'Persian', 'Test', 'Example format', ['descriptor1', 'descriptor2'])
+        self.assertEqual(record.first, 2)
+        self.assertEqual(record.second, 3)
+        self.assertEqual(record.promptname, 'Test')
+        # ... continue asserting other attributes
+
+    def test_update_results(self):
+        # Test update_results function
+        record = Record(2, 3, '+', 'Persian', 'Test', 'Example format', ['descriptor1', 'descriptor2'])
+        record.update_results('completion', ['lang1', 'lang2'], ['Persian', 'Arabic'], 'operand', 'answer', ['desc1', 'desc2'])
+        self.assertEqual(record.completion, 'completion')
+        self.assertEqual(record.completionLanguages, ['lang1', 'lang2'])
+        # ... continue asserting other attributes
+
+    def test_to_dict(self):
+        # Test to_dict function
+        record = Record(2, 3, '+', 'Persian', 'Test', 'Example format', ['descriptor1', 'descriptor2'])
+        dict_record = record.to_dict()
+        self.assertEqual(dict_record['first'], 2)
+        self.assertEqual(dict_record['second'], 3)
+        # ... continue asserting other attributes
+
+    def test_to_csv(self):
+        # Test to_csv function
+        record = Record(2, 3, '+', 'Persian', 'Test', 'Example format', ['descriptor1', 'descriptor2'])
+        csv_record = record.to_csv()
+        self.assertIsInstance(csv_record, str)  # check if csv_record is indeed string
+        # check if csv string contains all elements
+        self.assertTrue(str(2) in csv_record)
+        self.assertTrue('+' in csv_record)
+        self.assertTrue('Test' in csv_record)
+        # ... continue asserting other elements
 
 class TestConverters(unittest.TestCase):
     def test_persian_converter(self):
