@@ -35,9 +35,12 @@ class Record:
         #This assumes that prompt format will be of the following format
         #"Odgovorite u sljedećem formatu 'Wynik mnożenia {num2}{sign}{num3} wynosi {num6}'. Podaj wynik mnożenia {numfirst}{sign}{numsecond}"
         new_promptformat = promptformat
+        new_promptformat = new_promptformat.replace('{first}', str(first))
+        new_promptformat = new_promptformat.replace('{second}', str(second))
+        new_promptformat = new_promptformat.replace('{sign}', str(sign))
         for match in re.findall(r'\{num(\d+)\}', promptformat):
             number = int(match)
-            new_promptformat = new_promptformat.replace('{num' + match + '}', converter(number))
+            new_promptformat = new_promptformat.replace('{num' + match + '}', converters[numeral_system].to_alt(number))
 
         # Replace prompt with formatted strings
         self.prompt = new_promptformat.format(first=self.first, second=self.second, numfirst=self.numfirst, numsecond=self.numsecond, sign=sign)
