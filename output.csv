@@ -1,0 +1,13 @@
+first|second|sign|numeral_system|promptname|promptdescriptors|prompt|completion|completionLanguages|completionNumeralSystems|completionOperands|completionAnswer|completionDescriptors
+373|323|*|Persian|English CoT|['prompt_language: English']|Answer in the following format 'The product of ۲ and ۳ is ۶'. Find the product ۳۷۳*۳۲۳||||||
+373|323|*|Devanagari|English CoT|['prompt_language: English']|Answer in the following format 'The product of २ and ३ is ६'. Find the product ३७३*३२३||||||
+373|323|*|Burmese|English CoT|['prompt_language: English']|Answer in the following format 'The product of ၂ and ၃ is ၆'. Find the product ၃၇၃*၃၂၃||||||
+373|323|*|Bengali|English CoT|['prompt_language: English']|Answer in the following format 'The product of ২ and ৩ is ৬'. Find the product ৩৭৩*৩২৩||||||
+373|323|*|Thai|English CoT|['prompt_language: English']|Answer in the following format 'The product of ๒ and ๓ is ๖'. Find the product ๓๗๓*๓๒๓||||||
+373|323|*|Arabic|English CoT|['prompt_language: English']|Answer in the following format 'The product of 2 and 3 is 6'. Find the product 373*323||||||
+373|323|*|Persian|Simplified Chinese CoT|['prompt_language: simplified_chinese']|请按照以下格式回答 '۲*۳的结果是۶'. 计算 ۳۷۳*۳۲۳||||||
+373|323|*|Devanagari|Simplified Chinese CoT|['prompt_language: simplified_chinese']|请按照以下格式回答 '२*३的结果是६'. 计算 ३७३*३२३||||||
+373|323|*|Burmese|Simplified Chinese CoT|['prompt_language: simplified_chinese']|请按照以下格式回答 '၂*၃的结果是၆'. 计算 ၃၇၃*၃၂၃||||||
+373|323|*|Bengali|Simplified Chinese CoT|['prompt_language: simplified_chinese']|请按照以下格式回答 '২*৩的结果是৬'. 计算 ৩৭৩*৩২৩||||||
+373|323|*|Thai|Simplified Chinese CoT|['prompt_language: simplified_chinese']|请按照以下格式回答 '๒*๓的结果是๖'. 计算 ๓๗๓*๓๒๓||||||
+373|323|*|Arabic|Simplified Chinese CoT|['prompt_language: simplified_chinese']|请按照以下格式回答 '2*3的结果是6'. 计算 373*323||||||

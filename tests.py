@@ -6,7 +6,7 @@ import time
 import unittest
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, ThaiConverter, BengaliConverter
 from data_record import Record, converters
-from completion_analysis import find_all_numbers, get_numsystems, find_answer_candidates, get_languages, get_completion_pattern, analyze_completion
+from completion_analysis import find_all_numbers, get_numsystems, find_answer_candidates, get_languages, get_completion_pattern
 
 class TestNumeralSystems(unittest.TestCase):
     
@@ -156,8 +156,7 @@ def test_async_vs_sync():
 
 
 ###Numeral tests
-
+import re
 #main function
 if __name__ == '__main__':
     unittest.main()
-    #print(asyncio.run(analyze_completion('124 multipled by 631 is ۱۲۳,۸۶۵', 125565, 124, 631)))

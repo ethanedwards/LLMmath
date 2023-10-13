@@ -15,6 +15,7 @@ class Record:
         self.first = first
         self.second = second
         self.sign = sign
+        self.answer = first * second
         self.numeral_system = numeral_system
         self.promptname = promptname
         self.promptdescriptors = promptdescriptors
@@ -38,20 +39,28 @@ class Record:
         new_promptformat = new_promptformat.replace('{first}', str(first))
         new_promptformat = new_promptformat.replace('{second}', str(second))
         new_promptformat = new_promptformat.replace('{sign}', str(sign))
-        for match in re.findall(r'\{num(\d+)\}', promptformat):
+        for match in re.findall(r'\{num(\d+)\}', new_promptformat):
             number = int(match)
             new_promptformat = new_promptformat.replace('{num' + match + '}', converters[numeral_system].to_alt(number))
 
         # Replace prompt with formatted strings
         self.prompt = new_promptformat.format(first=self.first, second=self.second, numfirst=self.numfirst, numsecond=self.numsecond, sign=sign)
 
-    def update_results(self, completion: str, completionLanguages: list, completionNumeralSystems: list, completionOperands: str, completionAnswer: str, completionDescriptors: list):
+    def update_results(self, completion: str, completionLanguages: list, completionNumeralSystems: list, completionOperands: str, completionAnswer: str, completionAnswerArabic: int, completionCorrect: bool, completionDescriptors: list):
         self.completion = completion
         self.completionLanguages = completionLanguages
         self.completionNumeralSystems = completionNumeralSystems
         self.completionOperands = completionOperands
         self.completionAnswer = completionAnswer
+        self.completionAnswerArabic = completionAnswerArabic
+        self.completionCorrect = completionCorrect
         self.completionDescriptors = completionDescriptors
+
+    def output_prompt(self):
+        return self.prompt
+    
+    def output_completion_vars(self):
+        return self.answer, self.first, self.second
 
     def to_dict(self):
         return {

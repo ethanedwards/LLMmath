@@ -112,55 +112,6 @@ def find_answer_candidates(completion: str):
                 candidates.append((number, arabic_form, numsystem, contains_comma))
     return candidates
 
-#Extract all the information for the completion and return it to fill out the datarecord
-async def analyze_completion(completion: str, answer: int, operandA: int, operandB: int):
-    # Initialize variables with default values to avoid errors in case of empty input
-    languages = []
-    numsystems = []
-    operands = []
-    check_answer = False
-    answer_candidates = []
-    answer_string = ''
-    answer_number = 0
-    answer_comma = False
-    answer_numeral_system = ''
-    multiple_answers = False
-    other_answers = []
-    operand_numsystems = []
-    operand_answer_same_numsystem = False
-    completion_pattern = ''
-    
-    # Get values from helper functions only if there is any completion
-    if completion:
-        languages = await get_languages(completion)
-        numsystems = get_numsystems(completion)
-        operands = [find_number(completion, operandA)[0][1] if find_number(completion, operandA) else '',
-                    find_number(completion, operandB)[0][1] if find_number(completion, operandB) else '']
-        if find_number(completion, answer):
-            check_answer = True
-        answer_candidates = find_answer_candidates(completion)
-        if answer_candidates:
-            answer_string = answer_candidates[0][0]
-            answer_number = answer_candidates[0][1]
-            answer_comma = answer_candidates[0][3]
-            answer_numeral_system = answer_candidates[0][2]
-            multiple_answers = len(answer_candidates) > 1
-            other_answers = answer_candidates[1:]
-        operands_full = [find_number(completion, operandA) if find_number(completion, operandA) else [],
-                          find_number(completion, operandB) if find_number(completion, operandB) else []]
-        operand_numsystems = [operand[0][2] for operand in operands_full if operand]
-        operand_answer_same_numsystem = answer_numeral_system in operand_numsystems
-        completion_pattern = await get_completion_pattern(completion)
-
-    misc_qualities = {
-        'answer_comma': answer_comma,
-        'answer_numeral_system': answer_numeral_system,
-        'multiple_answers': multiple_answers,
-        'other_answers': other_answers,
-        'operands_full': operands_full,
-        'operand_numsystems': operand_numsystems,
-        'operand_answer_same_numsystem': operand_answer_same_numsystem,
-        'completion_pattern': completion_pattern
-    }
-
-    return languages, numsystems, operands, check_answer, answer_string, answer_number, misc_qualities
+def clean_completion(completion: str):
+    completion = completion.replace('\n', '{newline}')
+    return completion
