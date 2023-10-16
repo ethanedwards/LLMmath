@@ -12,7 +12,7 @@ import time
 
 
 #Simple function for chunking the record list into smaller components to avoid api limits
-def chunks(lst, n):
+def chunks(lst: list, n: int):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
