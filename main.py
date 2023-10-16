@@ -9,6 +9,7 @@ from data_record import Record
 from api_call import begin_async, end_async, api_call, TokenLimiter, OPENAI_INTERVAL
 import asyncio
 import time
+from tqdm import tqdm
 
 
 #Simple function for chunking the record list into smaller components to avoid api limits
@@ -17,7 +18,7 @@ def chunks(lst: list, n: int):
         yield lst[i:i + n]
 
 #Function to get each responses from gpt-4 and then use the processing functions to get the data
-async def handle_record(record: Record, semaphore:asyncio.Semaphore, token_semaphore: TokenLimiter, failed_records: list=[]):
+async def handle_record(record: Record, semaphore:asyncio.Semaphore, token_semaphore: TokenLimiter, pbar:tqdm, failed_records: list=[]):
     try:
         #Get completion from GPT-4
         completion = await api_call(prompt=record.output_prompt(), semaphore=semaphore)
@@ -31,6 +32,8 @@ async def handle_record(record: Record, semaphore:asyncio.Semaphore, token_semap
         #If all else fails, including server timeouts. Should keep a running list so that any failures can be processed later and added in to any running files
         print(f"Failure handling record {record.to_csv()}: {e}")
         failed_records.append(record)
+    finally:
+        pbar.update(1)
 
 
 #Main function which handles the asyn processing
@@ -44,7 +47,7 @@ async def run_experiment():
     CHUNK_SIZE = 199
 
     #Get all the prompts for the experiment, handled in experiment.py
-    records = cot_lang_experiment_records()
+    records = cot_lang_experiment_records()[:230]
     total_records = len(records)
     failed_records = []
 
@@ -57,14 +60,14 @@ async def run_experiment():
 
     #Helper timer for logging purposes
     start_time_total = time.time()  
-
+    pbar = tqdm(total=len(records))
 
     #Main loop of async processing
     for chunk_index, batch in enumerate(chunks(records, CHUNK_SIZE)):
         start_time = time.time()  # Timer to maintain interval that OpenAI uses for api limits
         #Main processing of asyncio. The limiting factor is currently the token limit for GPT-3, 
         # but in order to do continuous updating and logging waiting for each batch was chosen
-        await asyncio.gather(*[handle_record(record, semaphore=semaphore, token_semaphore=token_semphore, failed_records=failed_records) for record in batch])
+        await asyncio.gather(*[handle_record(record, semaphore=semaphore, token_semaphore=token_semphore, pbar=pbar, failed_records=failed_records) for record in batch])
         
         #Writes output of the current batch
         write_to_csv(
@@ -73,9 +76,10 @@ async def run_experiment():
         )
 
         #Writes any failures for later processing
-        write_to_csv(
-        [record.to_dict() for record in failed_records],
-        'failed.csv'
+        if failed_records:
+            write_to_csv(
+            [record.to_dict() for record in failed_records],
+            'failed.csv'
         )
 
         #Logging information
