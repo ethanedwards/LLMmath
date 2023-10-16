@@ -7,9 +7,9 @@ import time
 from random import uniform
 from concurrent.futures import ThreadPoolExecutor
 
-# The rate limit for OpenAI API
-# Set to GPT-4 limit by default
-RATE_LIMIT = 300
+# The openAI api interval, currently at one minute
+OPENAI_INTERVAL = 60
+
 # Set RETRY_AFTER_STATUS_CODES to API rate limit status code
 RETRY_AFTER_STATUS_CODES = (429, 500, 502, 503, 504)
 # Create a semaphore to avoid rate limits
