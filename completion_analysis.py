@@ -10,8 +10,11 @@
 #Update the record with all these values
 
 import re
-from api_call import api_call
+from api_call import api_call, TokenLimiter
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter, ArabicConverter
+import asyncio
+import tiktoken
+
 
 numsystems = {
     'Persian': PersianConverter(),
@@ -22,11 +25,20 @@ numsystems = {
     'Arabic': ArabicConverter()
 }
 
+def count_tokens(prompt: str):
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    return len(encoding.encode(prompt))
+
 #General function for calling GPT to assess a condition in the completion
-async def get_gpt_check(completion: str, pattern: str, prompt_template: str):
+async def get_gpt_check(completion: str, pattern: str, prompt_template: str, tokensemaphore: TokenLimiter=None):
     matched_resp = []
     checkprompt = prompt_template.format(completion=completion)
-    checkresponse = await api_call(checkprompt, model='gpt-3.5-turbo', temperature=0.7, max_retries=3)
+    token_count = count_tokens(checkprompt)
+    await tokensemaphore.use_tokens(token_count)
+    checkresponse = await api_call(checkprompt, model='gpt-3.5-turbo', temperature=0.7, max_retries=3, semaphore=tokensemaphore.sem)
+
+    tokensemaphore.release_tokens(token_count)
+
     keys_in_response = re.findall(pattern, checkresponse)
 
     # Capitalize each key for standardization
@@ -35,23 +47,23 @@ async def get_gpt_check(completion: str, pattern: str, prompt_template: str):
     return matched_resp if matched_resp else ["error"]
 
 #Get languages in the completion
-async def get_languages(completion: str):
+async def get_languages(completion: str, tokensemaphore: TokenLimiter=None):
     checkprompt = f"""The following is a completion from a prompt asking a GPT-model to perform a math problem in several different languages and numeral system. You need to classify the language that the sentence is written in completely ignore numerals. Your response options are '&english&', '&croatian&', '&traditionalchinese&', '&simplifiedchinese&', '&burmese&', '&thai&', '&nepali&', '&bengali&', '&farsi&', and '&japanese&' If there are only numbers and no language just put '&nolanguage&'. If there is a mix of multiple languages, list each of them. If it does not fall into these categories answer '&other&'. Ignore all numerals in your answer. So for example "The product of ๖๗๖ and ๔๑๔ is ๒๗๙๔๔๔." would return '&english&' because the words are in English even if the numerals are in Thai.
 
 /completion
 {completion}
 /endcompletion"""
     
-    return await get_gpt_check(completion, r"&(.+?)&", checkprompt)
+    return await get_gpt_check(completion, r"&(.+?)&", checkprompt, tokensemaphore=tokensemaphore)
 
 #Use GPT to check which sentence pattern the completion follows
-async def get_completion_pattern(completion: str):
+async def get_completion_pattern(completion: str, tokensemaphore: TokenLimiter=None):
     checkprompt = f"""The following is a completion prompt asking a GPT-model to perform a math problem in several different languages and numeral system. You need to translate the completion into english and then classify which category the response belongs to. If it outputs just the answer like '३१३६४४' or '321,521' then your response should be '&nocot&'. If it does not contain a number in any numeral system, write '&nonumber&'. If it takes the form of something like '676 গুণিত 464 এর উত্তর হলো 313,664' or 'The product of 676 and 464 is 313664.' which states the problem and then answers write '&cot&'. If it does not follow any of these patterns write '&other&' 
 
 /completion
 {completion}
 /endcompletion"""
-    return await get_gpt_check(completion, r"&(.+?)&", checkprompt)
+    return await get_gpt_check(completion, r"&(.+?)&", checkprompt, tokensemaphore=tokensemaphore)
 
 
 #Get numeral systems in the completion

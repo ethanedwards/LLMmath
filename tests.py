@@ -151,7 +151,7 @@ def test_sync():
 
 
 def test_async_vs_sync():
-    test_sync()
+    #test_sync()
     asyncio.run(test_async())
 
 
@@ -159,4 +159,5 @@ def test_async_vs_sync():
 import re
 #main function
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    test_async_vs_sync()

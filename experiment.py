@@ -2,6 +2,8 @@
 from data_record import Record, converters
 from completion_analysis import find_number, get_numsystems, find_answer_candidates, get_languages, get_completion_pattern
 import csv
+from api_call import TokenLimiter
+import os
 
 def cot_lang_experiment_records():
     englishpreprompt = "Answer in the following format 'The product of {num2} and {num3} is {num6}'. Find the product {num{first}}{sign}{num{second}}"
@@ -36,7 +38,7 @@ def gen_records(operandsA, operandsB, signs, prompttemplates, num_systems):
 
 
 #Extract all the information for the completion and return it to fill out the datarecord
-async def analyze_completion(completion: str, answer: int, operandA: int, operandB: int):
+async def analyze_completion(completion: str, answer: int, operandA: int, operandB: int, tokensemaphore: TokenLimiter=None):
     # Initialize variables with default values to avoid errors in case of empty input
     languages = []
     numsystems = []
@@ -55,7 +57,7 @@ async def analyze_completion(completion: str, answer: int, operandA: int, operan
     
     # Get values from helper functions only if there is any completion
     if completion:
-        languages = await get_languages(completion)
+        languages = await get_languages(completion, tokensemaphore=tokensemaphore)
         numsystems = get_numsystems(completion)
         operands = [find_number(completion, operandA)[0][1] if find_number(completion, operandA) else '',
                     find_number(completion, operandB)[0][1] if find_number(completion, operandB) else '']
@@ -73,7 +75,7 @@ async def analyze_completion(completion: str, answer: int, operandA: int, operan
                           find_number(completion, operandB) if find_number(completion, operandB) else []]
         operand_numsystems = [operand[0][2] for operand in operands_full if operand]
         operand_answer_same_numsystem = answer_numeral_system in operand_numsystems
-        completion_pattern = await get_completion_pattern(completion)
+        completion_pattern = await get_completion_pattern(completion, tokensemaphore=tokensemaphore)
 
     misc_qualities = {
         'answer_comma': answer_comma,
@@ -90,9 +92,12 @@ async def analyze_completion(completion: str, answer: int, operandA: int, operan
 
 
 def write_to_csv(dict_records, filename):
-    with open(filename, 'w', newline='') as file:
+    # Check if file does not exist to create it and write headers
+    file_exists = os.path.isfile(filename)
+    with open(filename, 'a+', newline='') as file:
         fieldnames = dict_records[0].keys()
         writer = csv.DictWriter(file, fieldnames,delimiter="|")
-        writer.writeheader()
+        if not file_exists:
+            writer.writeheader()  
         for record in dict_records:
             writer.writerow(record)

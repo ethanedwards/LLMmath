@@ -5,18 +5,20 @@ import openai
 import config
 import time
 from random import uniform
+from concurrent.futures import ThreadPoolExecutor
 
 # The rate limit for OpenAI API
 # Set to GPT-4 limit by default
-RATE_LIMIT = 10
+RATE_LIMIT = 300
 # Set RETRY_AFTER_STATUS_CODES to API rate limit status code
 RETRY_AFTER_STATUS_CODES = (429, 500, 502, 503, 504)
 # Create a semaphore to avoid rate limits
-semaphore = asyncio.Semaphore(RATE_LIMIT)
+#semaphore = asyncio.Semaphore(RATE_LIMIT)
+executor = ThreadPoolExecutor(max_workers=20)
 
 # Retry parameters
-min_wait_time = 1
-max_wait_time = 60  # Maximum wait time before retrying when rate limited
+min_wait_time = 30
+max_wait_time = 70  # Maximum wait time before retrying when rate limited
 jitter = 0.1  # Add some randomness to avoid close polling loops between different clients
 
 #set up openai api key
@@ -33,7 +35,8 @@ async def end_async():
     await openai.aiosession.get().close()
 
 
-async def api_call(prompt: str, model: str='gpt-4', temperature: float=0.0, max_tokens: int=100, messages: list=[], max_retries: int=3):
+
+async def api_call(prompt: str, model: str='gpt-4', temperature: float=0.0, max_tokens: int=100, messages: list=[], max_retries: int=3, semaphore: asyncio.Semaphore=None):
     # Obtain a semaphore
     async with semaphore:
         result = await create_chat_completion(prompt, model, temperature, max_tokens, messages, max_retries)
@@ -85,9 +88,17 @@ async def create_chat_completion(prompt: str, model: str='gpt-4', temperature: f
             pass
         except openai.error.RateLimitError as e:
         #Handle rate limit error (we recommend using exponential backoff)
-            print(f"OpenAI API request exceeded rate limit: {e}")
-            print(f'Last attempt was {prompt}')
-            pass
+            print(f"Attempt {i+1}/{max_retries} failed with error: {e}")
+
+            if i < max_retries - 1:
+                wait_time = min(max_wait_time, min_wait_time * (2 ** i))  # Exponential backoff
+                wait_time += uniform(-jitter, jitter) * wait_time  # Random jitter
+                await asyncio.sleep(wait_time)
+                continue
+            else:
+                print(f"OpenAI API request exceeded rate limit: {e}")
+                print(f'Last attempt was {prompt}')
+                raise  # Re-raise the last exception
 
 #Not asynchronous, use for testing
 def create_chat_completion_sync(prompt: str, model: str='gpt-4', temperature: float=0.0, max_tokens: int=100, messages: list=[], max_retries: int=3):
@@ -139,50 +150,15 @@ def sync_create_chat_completion(data):
     except Exception as e:
         print(f"Failed to create chat completion: {e}")
 
-async def create_chat_completion2(prompt, model='gpt-4', temperature=0.0, max_tokens=100, messages=[], max_retries=3):
-    loop = asyncio.get_event_loop()
-    data = {
-        "model": model,
-        "messages": messages if messages else [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": temperature,
-        "max_tokens": max_tokens
-    }
-    
-    for i in range(max_retries):
-        try:
-            chat_completion_resp = await loop.run_in_executor(None, sync_create_chat_completion, data)
-            
-            return chat_completion_resp['choices'][0]['message']['content']
-            
-        except aiohttp.ClientError as e:
 
-            print(f"Attempt {i+1}/{max_retries} failed with error: {e}")
-            if e.status in RETRY_AFTER_STATUS_CODES or 'request limit' in str(e):
+class TokenLimiter:
+    def __init__(self, tokens):
+        self.sem = asyncio.Semaphore(tokens)
 
-                if i < max_retries - 1:
-                    wait_time = min(max_wait_time, min_wait_time * (2 ** i))  # Exponential backoff
-                    wait_time += uniform(-jitter, jitter) * wait_time  # Random jitter
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    print("All attempts failed. Raising last captured exception.")
-                    raise  # Re-raise the last exception
+    async def use_tokens(self, n_tokens):
+        for _ in range(n_tokens):
+            await self.sem.acquire()
 
-        except openai.error.APIError as e:
-        #Handle API error here, e.g. retry or log
-            print(f"OpenAI API returned an API Error: {e}")
-            print(f'Last attempt was {prompt}')
-            pass
-        except openai.error.APIConnectionError as e:
-            #Handle connection error here
-            print(f"Failed to connect to OpenAI API: {e}")
-            print(f'Last attempt was {prompt}')
-            pass
-        except openai.error.RateLimitError as e:
-        #Handle rate limit error (we recommend using exponential backoff)
-            print(f"OpenAI API request exceeded rate limit: {e}")
-            print(f'Last attempt was {prompt}')
-            pass
+    def release_tokens(self, n_tokens):
+        for _ in range(n_tokens):
+            self.sem.release()
