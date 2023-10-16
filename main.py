@@ -20,20 +20,29 @@ def chunks(lst: list, n: int):
 #Function to get each responses from gpt-4 and then use the processing functions to get the data
 async def handle_record(record: Record, semaphore:asyncio.Semaphore, token_semaphore: TokenLimiter, pbar:tqdm, failed_records: list=[]):
     try:
-        #Get completion from GPT-4
-        completion = await api_call(prompt=record.output_prompt(), semaphore=semaphore)
-        #Get relevant variables for the procesing stage
-        answer, first, second = record.output_completion_vars()
-        #Get processed completion variables, including from GPT-3
-        languages, numsystems, operands, check_answer, answer_string, answer_number, misc_qualities = await analyze_completion(completion=completion, answer=answer, operandA=first, operandB=second, tokensemaphore=token_semaphore)
-        #Update, completing the function
-        record.update_results(completion=clean_completion(completion), completionLanguages=languages, completionNumeralSystems=numsystems, completionOperands=operands, completionAnswer=answer_string, completionAnswerArabic=answer_number, completionCorrect=check_answer, completionDescriptors=misc_qualities)
+        # Set a timeout for the tasks
+        try:
+            await asyncio.wait_for(
+                process_record(record=record, semaphore=semaphore, token_semaphore=token_semaphore, pbar=pbar), 
+                timeout=180)  # Timeout of 3 minutes
+        except TimeoutError:
+            print("Processing record timed out!")
+
     except Exception as e:
-        #If all else fails, including server timeouts. Should keep a running list so that any failures can be processed later and added in to any running files
         print(f"Failure handling record {record.to_csv()}: {e}")
         failed_records.append(record)
     finally:
         pbar.update(1)
+
+async def process_record(record: Record, semaphore:asyncio.Semaphore, token_semaphore: TokenLimiter, pbar:tqdm, failed_records: list=[]):
+    #Get completion from GPT-4
+    completion = await api_call(prompt=record.output_prompt(), semaphore=semaphore)
+    #Get relevant variables for the procesing stage
+    answer, first, second = record.output_completion_vars()
+    #Get processed completion variables, including from GPT-3
+    languages, numsystems, operands, check_answer, answer_string, answer_number, misc_qualities = await analyze_completion(completion=completion, answer=answer, operandA=first, operandB=second, tokensemaphore=token_semaphore)
+    #Update, completing the function
+    record.update_results(completion=clean_completion(completion), completionLanguages=languages, completionNumeralSystems=numsystems, completionOperands=operands, completionAnswer=answer_string, completionAnswerArabic=answer_number, completionCorrect=check_answer, completionDescriptors=misc_qualities)
 
 
 #Main function which handles the asyn processing
@@ -91,6 +100,10 @@ async def run_experiment():
 
         print(f"Processed records: {processed_records}, Remaining records: {remaining_records}, Elapsed time: {total_time} seconds")
 
+        #Checks if it's at the end of the loop and all records have been processed
+        if remaining_records == 0:
+            print("All records processed!")
+            break
         #Checks the timer for the 60 second window on the GPT-4 batching
         process_time = time.time() - start_time
         if process_time < OPENAI_INTERVAL:

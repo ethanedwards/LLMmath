@@ -41,12 +41,12 @@ async def get_gpt_check(completion: str, pattern: str, prompt_template: str, tok
     token_count = count_tokens(checkprompt)
     #Waits until the token count is below the limit
     await tokensemaphore.use_tokens(token_count)
+
     #Removes the counted tokens based on OpenAI's window
     asyncio.create_task(tokensemaphore.release_tokens(token_count, OPENAI_INTERVAL))
 
     #Gets the actual response
     checkresponse = await api_call(checkprompt, model='gpt-3.5-turbo', temperature=0.7, max_retries=3, semaphore=tokensemaphore.sem)
-
     
     #Looks for patterns in the completion to give the templatized variable values GPT-3 prompts use
     keys_in_response = re.findall(pattern, checkresponse)

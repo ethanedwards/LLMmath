@@ -7,6 +7,7 @@ import openai
 import config
 import time
 from random import uniform
+import random
 
 # The openAI api interval, currently at one minute
 OPENAI_INTERVAL = 60
@@ -51,10 +52,19 @@ async def create_chat_completion(prompt: str, model: str='gpt-4', temperature: f
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}
         ]
+    #Random condition, only for testing purposes
+    #randcond = random.randint(1, 10) == 1
+
 
     #Main completion, using retries with backoff
     for i in range(max_retries):
+        
+
         try:
+            #Randomly raise an openAI api exception to test failure handling
+            #if randcond:
+            #    raise openai.error.APIConnectionError
+
             chat_completion_resp = await openai.ChatCompletion.acreate(
                 model=model, 
                 messages=messages,
