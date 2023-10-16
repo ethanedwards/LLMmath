@@ -159,5 +159,4 @@ def test_async_vs_sync():
 import re
 #main function
 if __name__ == '__main__':
-    #unittest.main()
-    test_async_vs_sync()
+    unittest.main()

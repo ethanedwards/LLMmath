@@ -17,8 +17,8 @@ RETRY_AFTER_STATUS_CODES = (429, 500, 502, 503, 504)
 executor = ThreadPoolExecutor(max_workers=20)
 
 # Retry parameters
-min_wait_time = 30
-max_wait_time = 70  # Maximum wait time before retrying when rate limited
+min_wait_time = 8
+max_wait_time = 30  # Maximum wait time before retrying when rate limited
 jitter = 0.1  # Add some randomness to avoid close polling loops between different clients
 
 #set up openai api key
@@ -36,7 +36,7 @@ async def end_async():
 
 
 
-async def api_call(prompt: str, model: str='gpt-4', temperature: float=0.0, max_tokens: int=100, messages: list=[], max_retries: int=3, semaphore: asyncio.Semaphore=None):
+async def api_call(prompt: str, model: str='gpt-4', temperature: float=0.0, max_tokens: int=100, messages: list=[], max_retries: int=4, semaphore: asyncio.Semaphore=None):
     # Obtain a semaphore
     async with semaphore:
         result = await create_chat_completion(prompt, model, temperature, max_tokens, messages, max_retries)
@@ -70,6 +70,7 @@ async def create_chat_completion(prompt: str, model: str='gpt-4', temperature: f
                 if i < max_retries - 1:
                     wait_time = min(max_wait_time, min_wait_time * (2 ** i))  # Exponential backoff
                     wait_time += uniform(-jitter, jitter) * wait_time  # Random jitter
+                    print(f"Waiting {wait_time} seconds before retrying.")
                     await asyncio.sleep(wait_time)
                     continue
                 else:
@@ -93,6 +94,7 @@ async def create_chat_completion(prompt: str, model: str='gpt-4', temperature: f
             if i < max_retries - 1:
                 wait_time = min(max_wait_time, min_wait_time * (2 ** i))  # Exponential backoff
                 wait_time += uniform(-jitter, jitter) * wait_time  # Random jitter
+                print(f"Waiting {wait_time} seconds before retrying.")
                 await asyncio.sleep(wait_time)
                 continue
             else:
