@@ -10,25 +10,25 @@ Parallel processing is used throughout to enable fast tests. The code can be ada
 
 Original research done as part of SERI MATS by Ethan Edwards
 
-```
-![Early Results](./earlyresults.png)
+```html
+<img src="earlyresults.png" alt="Early Results">
 ```
 
 Initial write-up here: https://ethanedwards.substack.com/p/finding-the-language-of-thought-in
 
 Install requirements with pip
-'''
+```
 pip install -r requirements.txt
-'''
+```
 
 main.py is the current main function which will run the latest expeirment
-'''
+```
 python main.py
-'''
+```
 
 Currently configured to use OpenAI API, variables for which should be handled in an .env file with the variables 
-'''
+```
 OPENAI_ORG_KEY
 OPENAI_ORG_KEY
-'''
+```
 or can be modified in config.py.
