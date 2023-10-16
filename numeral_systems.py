@@ -1,28 +1,37 @@
+#Handles the numeral conversions necessary for this experiment
+#Currently assumes numeral systems that use standard base 10 place numerals
+#Could be modified to accomodate other systems such as Chinese or Roman
 class Converter:
     def __init__(self, numerals_map: dict):
         self.numerals_map = numerals_map
         self.reverse_numerals_map = {v: k for k, v in numerals_map.items()}
 
+    #Converts back to arabic and then to an int
     def to_arabic(self, num: int):
         arabic = ''
         for digit in str(num):
             arabic += self.reverse_numerals_map.get(digit, '')
         return int(arabic)
 
+    #Converts to the num_arabic system
     def to_alt(self, num: int):
         alt = ''
         for digit in str(num):
             alt += self.numerals_map.get(digit, '')
         return alt
 
+    #A simple detector for the alt system in question
     def is_alt(self, str_num: str):
         return any(c in self.numerals_map.values() for c in str_num)
 
+    #Just checking for arabic numerals
     @staticmethod
     def is_arabic(str_num: str):
         return any('0' <= c <= '9' for c in str_num)
     
 
+
+#Converters for each numeral system
 class PersianConverter(Converter):
     def __init__(self):
         super().__init__({
@@ -102,6 +111,7 @@ class BengaliConverter(Converter):
             "9" : "৯",
         })
 
+#Helpful for keeping all numeral systems equivalent even if arabic has special status
 
 class ArabicConverter(Converter):
     def __init__(self):
