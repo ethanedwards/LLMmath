@@ -5,6 +5,9 @@ import csv
 from api_call import TokenLimiter
 import os
 
+
+#Current experiment, including all prompts, operands, and signs
+#Future experiments can use the same basic template
 def cot_lang_experiment_records():
     englishpreprompt = "Answer in the following format 'The product of {num2} and {num3} is {num6}'. Find the product {num{first}}{sign}{num{second}}"
     simpchinesepreprompt = "请按照以下格式回答 '{num2}{sign}{num3}的结果是{num6}'. 计算 {num{first}}{sign}{num{second}}"
@@ -24,7 +27,7 @@ def cot_lang_experiment_records():
     records = gen_records(operandsA, operandsB, signs, prompttemplates, num_systems)
     return records
 
-
+#A general function to generate records based on the inputs
 def gen_records(operandsA, operandsB, signs, prompttemplates, num_systems):
     records = []
     for first in operandsA:
@@ -38,6 +41,7 @@ def gen_records(operandsA, operandsB, signs, prompttemplates, num_systems):
 
 
 #Extract all the information for the completion and return it to fill out the datarecord
+#Will be experiment specific, but can may apply to multiple
 async def analyze_completion(completion: str, answer: int, operandA: int, operandB: int, tokensemaphore: TokenLimiter=None):
     # Initialize variables with default values to avoid errors in case of empty input
     languages = []
@@ -57,12 +61,17 @@ async def analyze_completion(completion: str, answer: int, operandA: int, operan
     
     # Get values from helper functions only if there is any completion
     if completion:
+        #Languages
         languages = await get_languages(completion, tokensemaphore=tokensemaphore)
+        #Numsystmes
         numsystems = get_numsystems(completion)
+        #Operands
         operands = [find_number(completion, operandA)[0][1] if find_number(completion, operandA) else '',
                     find_number(completion, operandB)[0][1] if find_number(completion, operandB) else '']
+        #Check the answer
         if find_number(completion, answer):
             check_answer = True
+        #Get any answer candidates and info about them
         answer_candidates = find_answer_candidates(completion)
         if answer_candidates:
             answer_string = answer_candidates[0][0]
@@ -71,12 +80,16 @@ async def analyze_completion(completion: str, answer: int, operandA: int, operan
             answer_numeral_system = answer_candidates[0][2]
             multiple_answers = len(answer_candidates) > 1
             other_answers = answer_candidates[1:]
+        #Get additional details about operands
         operands_full = [find_number(completion, operandA) if find_number(completion, operandA) else [],
                           find_number(completion, operandB) if find_number(completion, operandB) else []]
         operand_numsystems = [operand[0][2] for operand in operands_full if operand]
         operand_answer_same_numsystem = answer_numeral_system in operand_numsystems
+
+        #Get a classification for the completion pattern
         completion_pattern = await get_completion_pattern(completion, tokensemaphore=tokensemaphore)
 
+    #Misc qualities of interest get logged into a dictionary
     misc_qualities = {
         'answer_comma': answer_comma,
         'answer_numeral_system': answer_numeral_system,
@@ -91,6 +104,7 @@ async def analyze_completion(completion: str, answer: int, operandA: int, operan
     return languages, numsystems, operands, check_answer, answer_string, answer_number, misc_qualities
 
 
+#Write results of the experiment to a csv
 def write_to_csv(dict_records, filename):
     # Check if file does not exist to create it and write headers
     file_exists = os.path.isfile(filename)
