@@ -1,3 +1,5 @@
+#A set of helper functions to analyze the completions. These are then combined for a specific experiment in experiment.py
+
 #This class needs to fill the following functions to analyze completions
 #Get all languages in the completion
 #Get all numeral systems in the completion
@@ -10,12 +12,12 @@
 #Update the record with all these values
 
 import re
-from api_call import api_call, TokenLimiter
+from api_call import api_call, TokenLimiter, OPENAI_INTERVAL
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter, ArabicConverter
 import tiktoken
 import asyncio
 
-
+#The six current num systmes
 numsystems = {
     'Persian': PersianConverter(),
     'Devanagari': DevanagariConverter(),
@@ -25,23 +27,28 @@ numsystems = {
     'Arabic': ArabicConverter()
 }
 
+#Token counting for async processing purposes
 def count_tokens(prompt: str):
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     return len(encoding.encode(prompt))
 
-#General function for calling GPT to assess a condition in the completion
+#General function for calling GPT to assess a condition in the completion. Because this will use gpt-3.5-turbo by default, token counting is relevant
 async def get_gpt_check(completion: str, pattern: str, prompt_template: str, tokensemaphore: TokenLimiter=None):
     matched_resp = []
+
+    #Handles token counting to keep under api limits
     checkprompt = prompt_template.format(completion=completion)
     token_count = count_tokens(checkprompt)
-    print(f"begun waiting with token count {token_count}")
+    #Waits until the token count is below the limit
     await tokensemaphore.use_tokens(token_count)
-    asyncio.create_task(tokensemaphore.release_tokens(token_count, 60))
-    print(f"finished waiting with token count {token_count}")
+    #Removes the counted tokens based on OpenAI's window
+    asyncio.create_task(tokensemaphore.release_tokens(token_count, OPENAI_INTERVAL))
+
+    #Gets the actual response
     checkresponse = await api_call(checkprompt, model='gpt-3.5-turbo', temperature=0.7, max_retries=3, semaphore=tokensemaphore.sem)
 
     
-
+    #Looks for patterns in the completion to give the templatized variable values GPT-3 prompts use
     keys_in_response = re.findall(pattern, checkresponse)
 
     # Capitalize each key for standardization
@@ -93,6 +100,7 @@ def find_numbers(completion: str, numsystem: str):
             numbers.append(match.group())
     return numbers
 
+#Get all numbers in all numeral systems as a helper function
 def find_all_numbers(completion: str):
     numbers = {}
     for numsystem in numsystems:
@@ -103,13 +111,18 @@ def find_all_numbers(completion: str):
 def find_number(completion: str, answer: int):
     numberlist = find_all_numbers(completion)
     result = []
+    #Goes through all numeral systems
     for numsystem in numsystems:
         numbers = numberlist[numsystem]
+        #Goes through all numbers found by find_all_numbers
         for number in numbers:
+            #Cleaning for commas
             clean_number = number
             if ',' in clean_number:
                 clean_number.replace(',', '')
+            #Gets the arabic form
             clean_number = numsystems[numsystem].to_arabic(clean_number)
+            #Checks for looked for number along with qualities
             if clean_number and int(clean_number) == answer:
                 result.append((number, clean_number, numsystem, ',' in number))
     return result
@@ -118,15 +131,18 @@ def find_number(completion: str, answer: int):
 def find_answer_candidates(completion: str):
     numberlist = find_all_numbers(completion)
     candidates = []
+    #Iterates through results of find_all_numbers
     for numsystem in numsystems:
         for number in numberlist[numsystem]:
             digits = number.replace(',', '')
+            #Assumes answers are 5 or 6 digits, which will be true for the relevant 3 digit multiplication problems currently being tested
             if len(digits) in [5, 6]:
                 arabic_form = numsystems[numsystem].to_arabic(digits)
                 contains_comma = ',' in number
                 candidates.append((number, arabic_form, numsystem, contains_comma))
     return candidates
 
+#Cleans the completion of newlines, but still inserts the value for human inspection
 def clean_completion(completion: str):
     completion = completion.replace('\n', '{newline}')
     return completion
