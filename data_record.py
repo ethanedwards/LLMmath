@@ -1,6 +1,8 @@
+#Record class for data inputs and outputs
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter, ArabicConverter
 import re
 
+#Convenient set of converters which can be used throughout
 converters = {
     'Persian': PersianConverter(),
     'Devanagari': DevanagariConverter(),
@@ -10,7 +12,9 @@ converters = {
     'Arabic': ArabicConverter()
 }
 
+
 class Record:
+    #Init takes in all the information needed to create a record. Note that misc details can be put into promptdescriptors as a list of keys and values
     def __init__(self, first: int, second: int, sign: str, numeral_system: str, promptname: str, promptformat: str, promptdescriptors: list):
         self.first = first
         self.second = second
@@ -19,6 +23,7 @@ class Record:
         self.numeral_system = numeral_system
         self.promptname = promptname
         self.promptdescriptors = promptdescriptors
+        #Left as None for eventual updates
         self.completion = None
         self.completionLanguages = None
         self.completionNumeralSystems = None
@@ -46,6 +51,7 @@ class Record:
         # Replace prompt with formatted strings
         self.prompt = new_promptformat.format(first=self.first, second=self.second, numfirst=self.numfirst, numsecond=self.numsecond, sign=sign)
 
+    #Update the record with all completion and analysis variables
     def update_results(self, completion: str, completionLanguages: list, completionNumeralSystems: list, completionOperands: str, completionAnswer: str, completionAnswerArabic: int, completionCorrect: bool, completionDescriptors: list):
         self.completion = completion
         self.completionLanguages = completionLanguages
@@ -56,12 +62,15 @@ class Record:
         self.completionCorrect = completionCorrect
         self.completionDescriptors = completionDescriptors
 
+    #Used for returning the prompt for the initial completion
     def output_prompt(self):
         return self.prompt
     
+    #Completion analysis relevant variables
     def output_completion_vars(self):
         return self.answer, self.first, self.second
 
+    #Used for outputs
     def to_dict(self):
         return {
             'first': self.first,
@@ -79,5 +88,6 @@ class Record:
             'completionDescriptors': self.completionDescriptors
         }
     
+    #Alternative method of outputs with just the values and the delimter, not currently used
     def to_csv(self, divider: str = '|'):
         return divider.join([str(self.first), str(self.second), str(self.sign), str(self.numeral_system), str(self.promptname), str(self.promptdescriptors), str(self.prompt), str(self.completion), str(self.completionLanguages), str(self.completionNumeralSystems), str(self.completionOperands), str(self.completionAnswer), str(self.completionDescriptors)])
