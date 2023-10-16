@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 
 
+
 def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
@@ -14,35 +15,43 @@ def chunks(lst, n):
 async def handle_record(record, semaphore, token_semaphore: TokenLimiter=None):
     try:
         completion = await api_call(prompt=record.output_prompt(), semaphore=semaphore)
-        print("GPT-4 complete")
         answer, first, second = record.output_completion_vars()
         languages, numsystems, operands, check_answer, answer_string, answer_number, misc_qualities = await analyze_completion(completion=completion, answer=answer, operandA=first, operandB=second, tokensemaphore=token_semaphore)
-        print("analyze complete")
-
         record.update_results(completion=clean_completion(completion), completionLanguages=languages, completionNumeralSystems=numsystems, completionOperands=operands, completionAnswer=answer_string, completionAnswerArabic=answer_number, completionCorrect=check_answer, completionDescriptors=misc_qualities)
     except Exception as e:
         print(f"Failure handling record {record}: {e}")
 
+
 async def run_experiment():
-    records = cot_lang_experiment_records()[:420]
+    GPT4_RATE_LIMIT = 300
+    GPT3_TOKEN_COUNT = 70000
+    CHUNK_SIZE = 199
+    records = cot_lang_experiment_records()
+    total_records = len(records)
 
-#    asyncio.set_event_loop(asyncio.new_event_loop())
-
-    RATE_LIMIT = 900
-    semaphore = asyncio.Semaphore(RATE_LIMIT)
-    token_semphore = TokenLimiter(90000)
+    semaphore = asyncio.Semaphore(GPT4_RATE_LIMIT)
+    token_semphore = TokenLimiter(GPT3_TOKEN_COUNT)
 
     begin_async()
 
-    for batch in chunks(records, 199):
+    start_time_total = time.time()  
+
+    for chunk_index, batch in enumerate(chunks(records, CHUNK_SIZE)):
         start_time = time.time()  # Timer to maintain the 1-minute interval
 
         await asyncio.gather(*[handle_record(record, semaphore=semaphore, token_semaphore=token_semphore) for record in batch])
-        print("Batch complete")
         write_to_csv(
         [record.to_dict() for record in batch],
         'output.csv'
         )
+
+        processed_records = chunk_index * CHUNK_SIZE + len(batch)
+        remaining_records = total_records - processed_records
+
+        process_time = time.time() - start_time
+        total_time = time.time() - start_time_total 
+
+        print(f"Processed records: {processed_records}, Remaining records: {remaining_records}, Elapsed time: {total_time} seconds")
 
         process_time = time.time() - start_time
         if process_time < 60.0:

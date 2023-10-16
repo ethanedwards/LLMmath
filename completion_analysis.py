@@ -13,6 +13,7 @@ import re
 from api_call import api_call, TokenLimiter
 from numeral_systems import PersianConverter, DevanagariConverter, BurmeseConverter, BengaliConverter, ThaiConverter, ArabicConverter
 import tiktoken
+import asyncio
 
 
 numsystems = {
@@ -33,11 +34,13 @@ async def get_gpt_check(completion: str, pattern: str, prompt_template: str, tok
     matched_resp = []
     checkprompt = prompt_template.format(completion=completion)
     token_count = count_tokens(checkprompt)
+    print(f"begun waiting with token count {token_count}")
     await tokensemaphore.use_tokens(token_count)
+    asyncio.create_task(tokensemaphore.release_tokens(token_count, 60))
     print(f"finished waiting with token count {token_count}")
     checkresponse = await api_call(checkprompt, model='gpt-3.5-turbo', temperature=0.7, max_retries=3, semaphore=tokensemaphore.sem)
 
-    tokensemaphore.release_tokens(token_count)
+    
 
     keys_in_response = re.findall(pattern, checkresponse)
 

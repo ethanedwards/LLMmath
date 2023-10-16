@@ -156,11 +156,17 @@ def sync_create_chat_completion(data):
 class TokenLimiter:
     def __init__(self, tokens):
         self.sem = asyncio.Semaphore(tokens)
+        self.count = 0
 
     async def use_tokens(self, n_tokens):
         for _ in range(n_tokens):
             await self.sem.acquire()
+        self.count += n_tokens
+        print(self.count)
 
-    def release_tokens(self, n_tokens):
+    async def release_tokens(self, n_tokens, waittime: int=60):
+        await asyncio.sleep(waittime)
         for _ in range(n_tokens):
             self.sem.release()
+        self.count -= n_tokens
+        print(self.count)
