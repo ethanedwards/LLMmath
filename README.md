@@ -10,9 +10,7 @@ Parallel processing is used throughout to enable fast tests. The code can be ada
 
 Original research done as part of SERI MATS by Ethan Edwards
 
-```html
-<img src="earlyresults.png" alt="Early Results">
-```
+![Early Results](./earlyresults.png)
 
 Initial write-up here: https://ethanedwards.substack.com/p/finding-the-language-of-thought-in
 
