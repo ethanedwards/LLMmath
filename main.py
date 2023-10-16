@@ -56,7 +56,7 @@ async def run_experiment():
     CHUNK_SIZE = 199
 
     #Get all the prompts for the experiment, handled in experiment.py
-    records = cot_lang_experiment_records()[:230]
+    records = cot_lang_experiment_records()
     total_records = len(records)
     failed_records = []
 
